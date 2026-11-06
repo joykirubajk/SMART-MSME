@@ -38,3 +38,6 @@ Backend/.env
 coverage/
 **/.cache/
 
+
+# Test env (copy from .env.test.example)
+Backend/.env.test
