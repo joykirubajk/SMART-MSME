@@ -1,75 +1,45 @@
 import Scheme from '../models/scheme.js';
+import { evaluateAll, normalizeProfile, missingRequiredFields } from '../services/eligibilityEngine.js';
+import { fail } from '../utils/response.js';
 
-
-function checkEligibility(user, scheme) {
-    const rules = scheme.rules || {};
-    const beneficiaryCategories = scheme.beneficiary_categories || {};
-
-    if (rules.min_age !== undefined && user.age < rules.min_age) return false;
-    
-    if (user.beneficiary_category) {
-        if (rules.max_age_special !== undefined && user.age > rules.max_age_special) return false;
-    } else {
-        if (rules.max_age_special !== undefined && !user.beneficiary_category) {
-           
-            if (rules.max_age_general !== undefined && user.age > rules.max_age_general) return false;
-        }
-    }
-    
-    if (rules.max_age && user.age > rules.max_age) return false;
-
-    if (rules.gender && Array.isArray(rules.gender)) {
-        if (!rules.gender.includes(user.gender)) return false;
-    }
-
-    if (rules.state && user.location && user.location !== rules.state) return false;
-    if (rules.domicile && user.location && user.location !== rules.domicile) return false;
-
-    if (rules.max_investment && user.investment && user.investment > rules.max_investment) return false;
-    if (rules.max_project_cost && user.investment && user.investment > rules.max_project_cost) return false;
-    if (rules.min_project_cost && user.investment && user.investment < rules.min_project_cost) return false;
-
-    if (rules.max_income && user.income && user.income > rules.max_income) return false;
-    if (rules.max_family_income && user.income && user.income > rules.max_family_income) return false;
-
-    if (rules.min_experience && user.experience !== undefined && user.experience < rules.min_experience) return false;
-    if (rules.min_experience_years && user.experience !== undefined && user.experience < rules.min_experience_years) return false;
-
-     if (rules.min_education && user.education) 
-
-    if (rules.max_previous_subsidy && user.previous_subsidy && user.previous_subsidy > rules.max_previous_subsidy) return false;
-    if (rules.prior_subsidy_limit && user.previous_subsidy && user.previous_subsidy > rules.prior_subsidy_limit) return false;
-
-    if (user.beneficiary_category && Object.keys(beneficiaryCategories).length > 0) {
-    
-        if (!Object.keys(beneficiaryCategories).includes(user.beneficiary_category)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// Controller for recommending schemes
-const recommendSchemes = async (req, res) => {
+// Controller for recommending schemes.
+// Returns eligible + possibly-eligible schemes (eligible first); each carries `tier` and `eligibility`
+// (passedRules / unknownRules / missingInputs). Not-eligible schemes are never returned.
+const recommendSchemes = async (req, res, next) => {
     try {
-        const user = req.body;
+        const profile = normalizeProfile(req.body);
+
+        const missing = missingRequiredFields(profile);
+        if (missing.length > 0) {
+            return fail(res, 400, 'Missing or invalid profile fields', missing.map((field) => ({
+                field,
+                message: `${field} is required`
+            })));
+        }
 
         const schemes = await Scheme.findAll();
+        const byId = new Map(schemes.map((s) => [s.id, s]));
+        const results = evaluateAll(profile, schemes);
 
-        const eligible = schemes.filter(scheme => checkEligibility(user, scheme));
+        const data = results.map((r) => ({
+            ...byId.get(r.schemeId),
+            tier: r.tier,
+            eligibility: {
+                passedRules: r.passedRules,
+                unknownRules: r.unknownRules,
+                missingInputs: r.missingInputs
+            }
+        }));
 
         res.json({
             success: true,
-            count: eligible.length,
-            data: eligible
+            count: data.length,
+            eligible_count: results.filter((r) => r.tier === 'eligible').length,
+            possible_count: results.filter((r) => r.tier === 'possibly_eligible').length,
+            data
         });
     } catch (error) {
-        console.error('Error recommending schemes:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+        next(error);
     }
 };
 

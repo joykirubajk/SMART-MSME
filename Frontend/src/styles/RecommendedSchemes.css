@@ -472,3 +472,13 @@
     font-size: 10px;
   }
 }
+
+.badge-possible {
+  background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+}
+
+.missing-inputs {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #9a6700;
+}

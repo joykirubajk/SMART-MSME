@@ -94,7 +94,7 @@ const SchemeRecommendationForm = ({ onRecommendations, onLoading }) => {
         beneficiary_category: formData.beneficiary_category || null,
         income: formData.income ? parseInt(formData.income, 10) : null,
         education: formData.education || null,
-        experience: formData.experience ? parseInt(formData.experience, 10) : 0,
+        experience: formData.experience !== '' ? parseInt(formData.experience, 10) : null,
       };
 
       const response = await schemeAPI.recommendSchemes(userDataForAPI);

@@ -2,6 +2,21 @@ import React, { useState } from 'react';
 import SchemeDetails from './SchemeDetails';
 import '../styles/RecommendedSchemes.css';
 
+const FIELD_LABELS = {
+  age: 'age',
+  gender: 'gender',
+  social_category: 'social category',
+  special_category: 'special category',
+  business_category: 'specific business type',
+  investment: 'investment amount',
+  location: 'state',
+  income: 'annual income',
+  education: 'education level',
+  experience: 'business experience',
+  previous_subsidy: 'previous subsidy received',
+  is_new_enterprise: 'whether this is a new enterprise',
+};
+
 const RecommendedSchemes = ({ schemes, isLoading }) => {
   const [selectedScheme, setSelectedScheme] = useState(null);
   const [expandedSchemes, setExpandedSchemes] = useState({});
@@ -62,7 +77,12 @@ const RecommendedSchemes = ({ schemes, isLoading }) => {
     <div className="schemes-container">
       <div className="schemes-header">
         <h2> Available Schemes for You</h2>
-        <p className="result-count">Found <strong>{schemes.length}</strong> eligible scheme(s) that match your profile</p>
+        <p className="result-count">
+          Found <strong>{schemes.filter((s) => s.tier !== 'possibly_eligible').length}</strong> eligible
+          {schemes.some((s) => s.tier === 'possibly_eligible') && (
+            <> and <strong>{schemes.filter((s) => s.tier === 'possibly_eligible').length}</strong> possibly eligible</>
+          )} scheme(s) for your profile
+        </p>
       </div>
 
       <div className="schemes-grid">
@@ -76,8 +96,18 @@ const RecommendedSchemes = ({ schemes, isLoading }) => {
             <div key={scheme.id} className="scheme-card">
               {/* Badge */}
               <div className="card-badge">
-                <span className="badge-eligible"> Perfect Match</span>
+                {scheme.tier === 'possibly_eligible' ? (
+                  <span className="badge-eligible badge-possible">Possibly eligible</span>
+                ) : (
+                  <span className="badge-eligible">Eligible</span>
+                )}
               </div>
+
+              {scheme.tier === 'possibly_eligible' && scheme.eligibility?.missingInputs?.length > 0 && (
+                <p className="missing-inputs">
+                  Add to confirm: {scheme.eligibility.missingInputs.map((f) => FIELD_LABELS[f] || f).join(', ')}
+                </p>
+              )}
 
               {/* Title */}
               <h3 className="scheme-title">{scheme.name}</h3>
