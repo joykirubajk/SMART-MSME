@@ -25,6 +25,19 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// A 401 on a request that carried a token means the session expired: clear it and tell the app.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && error.config?.headers?.Authorization) {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('auth:expired'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth endpoints
 export const authAPI = {
   // Sign up new user
@@ -184,6 +197,14 @@ export const collectionAPI = {
   },
 };
 
+// Business profile (used to pre-fill the recommendation form)
+export const profileAPI = {
+  getProfile: async () => {
+    const response = await apiClient.get('/business-profile');
+    return response.data;
+  },
+};
+
 // Scheme endpoints
 export const schemeAPI = {
   // Get all schemes
@@ -208,10 +229,10 @@ export const schemeAPI = {
     }
   },
 
-  // Get recommended schemes based on user data
-  recommendSchemes: async (userData) => {
+  // Get recommended schemes. Body: { profile?, save_profile? } (omit profile to use the saved one)
+  recommendSchemes: async (payload) => {
     try {
-      const response = await apiClient.post('/schemes/recommend', userData);
+      const response = await apiClient.post('/schemes/recommend', payload);
       return response.data;
     } catch (error) {
       console.error('Error getting scheme recommendations:', error);

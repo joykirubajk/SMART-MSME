@@ -8,7 +8,7 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 |---|---|---|
 | 1 Foundation | `phase-1-foundation` | Done, committed (2 commits) |
 | 2 Eligibility engine | `phase-2-eligibility-engine` | Done, committed |
-| 3 Profile + authenticated recommend API | - | Not started |
+| 3 Profile + authenticated recommend API | `phase-3-profile-recommend` | Done, committed |
 | 4 Python ranking service | - | Not started |
 | 5 Scheme discovery | - | Not started |
 | 6 Collections | - | Not started |
@@ -33,8 +33,18 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 - Tests: `npm test` 88/88 pass (84 engine/regression/seed + 4 endpoint tests with mocked DB). Frontend not compiled (no `Frontend/node_modules`).
 - Known: until Phase 3 adds the "new enterprise?" form field, schemes marked new-enterprise-only show as *possibly eligible* asking for it.
 
-## Remaining phases (7 of 9; detail in IMPLEMENTATION_PLAN.md)
-- **3** `user_profiles` persistence, authenticated `/recommend`, "new enterprise?" form field, 401 handling in the API client.
+## Phase 3 - Business profile + authenticated recommend (done)
+- New endpoints (JWT required): `GET /api/business-profile` -> `{ data: { profile | null } }`; `PUT /api/business-profile` (full replace, validated). Named `business-profile` to avoid clashing with the existing account `/api/users/profile`.
+- `POST /api/schemes/recommend` now requires login. Body `{ profile?, save_profile? }`: profile validated (400 + `errors[{field,message}]`), saved only when `save_profile === true`; without `profile` the saved one is used (400 if none).
+- Response shape unchanged from Phase 2 (`data` = list with `tier` + `eligibility`, plus `count`, `eligible_count`, `possible_count`).
+- `Backend/utils/validate.js` (`validateProfile`), `models/profile.js` (upsert), `controllers/profileController.js`, `routes/businessProfile.js`.
+- DB (additive): `ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_new_enterprise BOOLEAN` in `schema.sql`.
+- Frontend: form pre-fills from the saved profile, new "Starting a new enterprise?" + "Describe your business" fields, "Save these details" checkbox, API validation messages shown; API client clears the session and sends the user to sign-in on a 401 for a token-bearing request.
+- Profile field names in the API: `state`, `annual_income`, `experience_years`, `special_category` (the form maps its own names to these).
+- Tests: `npm test` 114/114 pass across 7 suites (profile endpoints, auth required, validator boundaries, saved-profile flow; DB mocked). Frontend files syntax-checked with @babel/parser only - **not compiled or run in a browser**. `user_profiles` SQL never run against Postgres.
+- Plan deviations: the `/api/meta/options` endpoint is deferred to Phase 5 (it ships with the filter-options endpoint); `data` stays a flat list instead of `data.recommendations`.
+
+## Remaining phases (6 of 9; detail in IMPLEMENTATION_PLAN.md)
 - **4** Python FastAPI ranking service (TF-IDF + feature fit), Node client with timeout and rule-based fallback, score and "why matched" UI.
 - **5** Scheme discovery: server-side filters, search, pagination, `GET /schemes/:id`, filter-options endpoint, Browse page.
 - **6** Collections: shared saved-state context, optimistic save with rollback, bulk saved-ids endpoint, heart button everywhere.

@@ -71,3 +71,6 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     business_description TEXT,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Phase 3 (additive): "are you starting a new enterprise?"
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_new_enterprise BOOLEAN;

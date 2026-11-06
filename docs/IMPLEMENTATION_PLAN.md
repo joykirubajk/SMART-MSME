@@ -17,6 +17,7 @@ The open questions were answered by delegation ("decide yourself"). Resulting ch
 - **Phase 1 actual scope** (changed from §4): `utils/validate.js` and `middleware/validate.js` are deferred to Phase 3 (first user of request validation) to avoid dead code; jest only (no `cross-env` needed, Jest sets `NODE_ENV=test`); `app.js` split from `server.js` so Supertest can import the app.
 - **Git workflow:** one local branch per phase (`phase-N-...`), commit locally at phase end, never push, never touch `main`. Fake homepage stats/email removal is its own commit.
 - **Navigation / collections:** no React Router; single Saved list (as planned).
+- **Phase 3 as built:** business profile lives at `/api/business-profile` (not `/api/profile`); `/api/meta/options` moves to Phase 5; the recommend response keeps its flat `data` list.
 
 ---
 

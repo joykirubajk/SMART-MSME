@@ -1,13 +1,35 @@
 import Scheme from '../models/scheme.js';
 import { evaluateAll, normalizeProfile, missingRequiredFields } from '../services/eligibilityEngine.js';
+import Profile from '../models/profile.js';
+import { validateProfile } from '../utils/validate.js';
 import { fail } from '../utils/response.js';
 
-// Controller for recommending schemes.
+// Controller for recommending schemes. Requires login.
+// Body: { profile?: {...}, save_profile?: boolean }. Without `profile`, the user's saved profile is used.
 // Returns eligible + possibly-eligible schemes (eligible first); each carries `tier` and `eligibility`
 // (passedRules / unknownRules / missingInputs). Not-eligible schemes are never returned.
 const recommendSchemes = async (req, res, next) => {
     try {
-        const profile = normalizeProfile(req.body);
+        const { profile: provided, save_profile: saveProfile } = req.body || {};
+        let profileInput;
+
+        if (provided !== undefined && provided !== null) {
+            const { value, errors } = validateProfile(provided);
+            if (errors.length > 0) {
+                return fail(res, 400, 'Invalid profile', errors);
+            }
+            profileInput = value;
+            if (saveProfile === true) {
+                await Profile.upsert(req.user.id, value);
+            }
+        } else {
+            profileInput = await Profile.findByUserId(req.user.id);
+            if (!profileInput) {
+                return fail(res, 400, 'No profile provided and no saved profile found');
+            }
+        }
+
+        const profile = normalizeProfile(profileInput);
 
         const missing = missingRequiredFields(profile);
         if (missing.length > 0) {

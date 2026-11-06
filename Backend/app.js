@@ -7,6 +7,7 @@ dotenv.config();
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import schemeRoutes from './routes/schemes.js';
+import businessProfileRoutes from './routes/businessProfile.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -37,6 +38,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/schemes', schemeRoutes);
+app.use('/api/business-profile', businessProfileRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

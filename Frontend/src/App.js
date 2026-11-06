@@ -27,6 +27,18 @@ function App() {
     }
   }, []);
 
+  // API client fires this when a token is rejected (expired/invalid)
+  useEffect(() => {
+    const onExpired = () => {
+      setIsLoggedIn(false);
+      setUser(null);
+      setRecommendations([]);
+      setCurrentPage('signin');
+    };
+    window.addEventListener('auth:expired', onExpired);
+    return () => window.removeEventListener('auth:expired', onExpired);
+  }, []);
+
   const handleShowRecommendation = () => {
     if (!isLoggedIn) {
       setCurrentPage('signin');
