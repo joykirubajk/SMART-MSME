@@ -11,6 +11,7 @@ import './styles/App.css';
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [recommendations, setRecommendations] = useState([]);
+  const [rankedBy, setRankedBy] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showRecommendationForm, setShowRecommendationForm] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -101,10 +102,13 @@ function App() {
 
                 <div className="recommendation-content">
                   <RecommendationForm
-                    onRecommendations={setRecommendations}
+                    onRecommendations={(list, meta) => {
+                      setRecommendations(list);
+                      setRankedBy(meta?.ranked_by || null);
+                    }}
                     onLoading={setIsLoading}
                   />
-                  <RecommendedSchemes schemes={recommendations} isLoading={isLoading} />
+                  <RecommendedSchemes schemes={recommendations} isLoading={isLoading} rankedBy={rankedBy} />
                 </div>
               </div>
             </section>

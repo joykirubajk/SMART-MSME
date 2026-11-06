@@ -9,7 +9,7 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 | 1 Foundation | `phase-1-foundation` | Done, committed (2 commits) |
 | 2 Eligibility engine | `phase-2-eligibility-engine` | Done, committed |
 | 3 Profile + authenticated recommend API | `phase-3-profile-recommend` | Done, committed |
-| 4 Python ranking service | - | Not started |
+| 4 Python ranking service | `phase-4-ranking-service` | Done, committed |
 | 5 Scheme discovery | - | Not started |
 | 6 Collections | - | Not started |
 | 7 Test hardening | - | Not started |
@@ -44,8 +44,17 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 - Tests: `npm test` 114/114 pass across 7 suites (profile endpoints, auth required, validator boundaries, saved-profile flow; DB mocked). Frontend files syntax-checked with @babel/parser only - **not compiled or run in a browser**. `user_profiles` SQL never run against Postgres.
 - Plan deviations: the `/api/meta/options` endpoint is deferred to Phase 5 (it ships with the filter-options endpoint); `data` stays a flat list instead of `data.recommendations`.
 
-## Remaining phases (6 of 9; detail in IMPLEMENTATION_PLAN.md)
-- **4** Python FastAPI ranking service (TF-IDF + feature fit), Node client with timeout and rule-based fallback, score and "why matched" UI.
+## Phase 4 - Python ranking service (done)
+- `ranking-service/` (FastAPI, local venv, pinned `requirements.txt`, own README): `GET /health`, `POST /rank`. Score = fixed weighted sum of five signals (TF-IDF text similarity 0.35, investment fit 0.25, benefit size 0.15, specificity 0.15, age fit 0.10); missing signals dropped and weights re-normalised; possibly-eligible x0.9. **Hand-set weights, nothing is learned** (no interaction data) - see `ranking-service/README.md` for limitations.
+- `scripts/build_model.py` builds a reproducible TF-IDF artifact (`artifacts/`, git-ignored): no randomness, no timestamps, version = hash of corpus + settings. Works without it in `adhoc` mode.
+- Node: `services/rankingClient.js` (1.5 s timeout, strict response validation), `services/fallbackScorer.js` (same formulas minus text), `services/recommendationService.js` (engine -> ML, else fallback). `POST /recommend` now also returns `score`, `reasons` per scheme and `ranked_by` (`ml` | `fallback` | `none`), `model_version`; ordered by score, not by tier.
+- Parity: `ranking-service/tests/fixtures/parity.json` is generated from the Python scorer; Node's fallback scorer is tested against all 18 cases, and a Python test fails if the fixture goes stale.
+- Frontend: match-score bar, "Why this matched" (reasons + passed rules), notice when fallback was used. `ranked_by` passed from form -> App -> results.
+- Tests: Node `npm test` 154/154 (8 suites); Python `pytest` 31/31. Live check: built the model, ran uvicorn on :8090, ran real seed schemes through the Node orchestrator over HTTP -> `ranked_by: ml`, food-processing scheme ranked first for a pickle-unit profile; with the URL unset -> `fallback`. Frontend syntax-checked only (not compiled/run in a browser).
+- Note: port 8001 is blocked on this Windows machine ("forbidden by access permissions"); docs use 8090.
+- To use: follow `ranking-service/README.md`, then set `RANKING_SERVICE_URL` in `Backend/.env`.
+
+## Remaining phases (5 of 9; detail in IMPLEMENTATION_PLAN.md)
 - **5** Scheme discovery: server-side filters, search, pagination, `GET /schemes/:id`, filter-options endpoint, Browse page.
 - **6** Collections: shared saved-state context, optimistic save with rollback, bulk saved-ids endpoint, heart button everywhere.
 - **7** Test hardening: frontend (React Testing Library) tests, coverage, test-all script.
@@ -56,9 +65,10 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 1. Install Postgres, create `msme` and `msme_test`, create `Backend/.env` and `.env.test` ([DB_SETUP.md](DB_SETUP.md)).
 2. Run `npm run db:migrate`, `npm run db:seed`, `npm test` in `Backend/` (DB tests only truly run then).
 3. Verify every seeded scheme against official sources ([DATA_VERIFICATION.md](DATA_VERIFICATION.md)).
-4. Replace the placeholder footer phone/hours in `Frontend/src/Home/Homepage.jsx`.
-5. `cd Frontend && npm install && npm start` once, to confirm it compiles (never compiled in this environment).
-6. Push branches / open PRs yourself.
+4. Run the ranking service once per `ranking-service/README.md` (needs Python 3.10+).
+5. Replace the placeholder footer phone/hours in `Frontend/src/Home/Homepage.jsx`.
+6. `cd Frontend && npm install && npm start` once, to confirm it compiles (never compiled in this environment).
+7. Push branches / open PRs yourself.
 
 ## Known caveats
 - Seed data is AI-written from general knowledge; treat as placeholders.

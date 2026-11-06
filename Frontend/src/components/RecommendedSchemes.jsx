@@ -17,9 +17,10 @@ const FIELD_LABELS = {
   is_new_enterprise: 'whether this is a new enterprise',
 };
 
-const RecommendedSchemes = ({ schemes, isLoading }) => {
+const RecommendedSchemes = ({ schemes, isLoading, rankedBy }) => {
   const [selectedScheme, setSelectedScheme] = useState(null);
   const [expandedSchemes, setExpandedSchemes] = useState({});
+  const [whyOpen, setWhyOpen] = useState({});
 
   const toggleExpand = (schemeId) => {
     setExpandedSchemes((prev) => ({
@@ -81,8 +82,13 @@ const RecommendedSchemes = ({ schemes, isLoading }) => {
           Found <strong>{schemes.filter((s) => s.tier !== 'possibly_eligible').length}</strong> eligible
           {schemes.some((s) => s.tier === 'possibly_eligible') && (
             <> and <strong>{schemes.filter((s) => s.tier === 'possibly_eligible').length}</strong> possibly eligible</>
-          )} scheme(s) for your profile
+          )} scheme(s) for your profile, best match first
         </p>
+        {rankedBy === 'fallback' && (
+          <p className="ranking-notice">
+            Smart ranking is temporarily unavailable, so these are ordered with a simpler method.
+          </p>
+        )}
       </div>
 
       <div className="schemes-grid">
@@ -102,6 +108,15 @@ const RecommendedSchemes = ({ schemes, isLoading }) => {
                   <span className="badge-eligible">Eligible</span>
                 )}
               </div>
+
+              {typeof scheme.score === 'number' && (
+                <div className="match-score" title="Relevance to your profile (not a probability)">
+                  <div className="match-score-bar">
+                    <div className="match-score-fill" style={{ width: `${Math.round(scheme.score * 100)}%` }}></div>
+                  </div>
+                  <span className="match-score-text">Match {Math.round(scheme.score * 100)}%</span>
+                </div>
+              )}
 
               {scheme.tier === 'possibly_eligible' && scheme.eligibility?.missingInputs?.length > 0 && (
                 <p className="missing-inputs">
@@ -205,6 +220,28 @@ const RecommendedSchemes = ({ schemes, isLoading }) => {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {(scheme.reasons?.length > 0 || scheme.eligibility?.passedRules?.length > 0) && (
+                <div className="why-matched">
+                  <button
+                    type="button"
+                    className="btn-expand"
+                    onClick={() => setWhyOpen((prev) => ({ ...prev, [scheme.id]: !prev[scheme.id] }))}
+                  >
+                    {whyOpen[scheme.id] ? 'Hide why this matched' : 'Why this matched'}
+                  </button>
+                  {whyOpen[scheme.id] && (
+                    <ul className="why-list">
+                      {(scheme.reasons || []).map((r, i) => (
+                        <li key={`r${i}`}>{r}</li>
+                      ))}
+                      {(scheme.eligibility?.passedRules || []).map((r, i) => (
+                        <li key={`p${i}`} className="why-rule">&#10003; {r.message}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
 

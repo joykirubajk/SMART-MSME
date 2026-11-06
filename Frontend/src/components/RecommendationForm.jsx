@@ -133,7 +133,7 @@ const SchemeRecommendationForm = ({ onRecommendations, onLoading }) => {
       };
 
       const response = await schemeAPI.recommendSchemes({ profile, save_profile: saveProfile });
-      onRecommendations(response.data || []);
+      onRecommendations(response.data || [], { ranked_by: response.ranked_by });
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       const apiErrors = error.response?.data?.errors;

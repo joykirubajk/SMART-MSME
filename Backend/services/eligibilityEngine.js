@@ -53,6 +53,7 @@ export function normalizeProfile(raw) {
     education: EDUCATION_ALIASES[education] || education,
     experience: num(p.experience ?? p.experience_years),
     previous_subsidy: num(p.previous_subsidy),
+    business_description: typeof p.business_description === 'string' && p.business_description.trim() !== '' ? p.business_description.trim() : undefined,
     is_new_enterprise: isNew,
   };
 }

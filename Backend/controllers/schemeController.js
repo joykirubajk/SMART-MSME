@@ -1,13 +1,15 @@
 import Scheme from '../models/scheme.js';
-import { evaluateAll, normalizeProfile, missingRequiredFields } from '../services/eligibilityEngine.js';
+import { normalizeProfile, missingRequiredFields } from '../services/eligibilityEngine.js';
+import { recommend } from '../services/recommendationService.js';
 import Profile from '../models/profile.js';
 import { validateProfile } from '../utils/validate.js';
 import { fail } from '../utils/response.js';
 
 // Controller for recommending schemes. Requires login.
 // Body: { profile?: {...}, save_profile?: boolean }. Without `profile`, the user's saved profile is used.
-// Returns eligible + possibly-eligible schemes (eligible first); each carries `tier` and `eligibility`
-// (passedRules / unknownRules / missingInputs). Not-eligible schemes are never returned.
+// Returns eligible + possibly-eligible schemes ordered by ranking score (desc); each carries `tier`, `score`,
+// `reasons` and `eligibility` (passedRules / unknownRules / missingInputs). `ranked_by` is 'ml' (Python service)
+// or 'fallback' (deterministic scorer). Not-eligible schemes are never returned.
 const recommendSchemes = async (req, res, next) => {
     try {
         const { profile: provided, save_profile: saveProfile } = req.body || {};
@@ -41,23 +43,23 @@ const recommendSchemes = async (req, res, next) => {
 
         const schemes = await Scheme.findAll();
         const byId = new Map(schemes.map((s) => [s.id, s]));
-        const results = evaluateAll(profile, schemes);
+        const ranked = await recommend(profile, schemes);
 
-        const data = results.map((r) => ({
+        const data = ranked.results.map((r) => ({
             ...byId.get(r.schemeId),
             tier: r.tier,
-            eligibility: {
-                passedRules: r.passedRules,
-                unknownRules: r.unknownRules,
-                missingInputs: r.missingInputs
-            }
+            score: r.score,
+            reasons: r.reasons,
+            eligibility: r.eligibility
         }));
 
         res.json({
             success: true,
             count: data.length,
-            eligible_count: results.filter((r) => r.tier === 'eligible').length,
-            possible_count: results.filter((r) => r.tier === 'possibly_eligible').length,
+            eligible_count: ranked.results.filter((r) => r.tier === 'eligible').length,
+            possible_count: ranked.results.filter((r) => r.tier === 'possibly_eligible').length,
+            ranked_by: ranked.ranked_by,
+            model_version: ranked.model_version,
             data
         });
     } catch (error) {
