@@ -226,16 +226,8 @@ function HomePage({ onFindSchemes, isLoggedIn, user, onNavigate, onLogout }) {
       {/* Statistics Section */}
       <section className="scheme-stats">
         <div className="stat-item">
-          <h3 className="stat-number">{allSchemes.length || "50"}+</h3>
-          <p className="stat-label">Active Schemes</p>
-        </div>
-        <div className="stat-item">
-          <h3 className="stat-number">10K+</h3>
-          <p className="stat-label">Businesses Helped</p>
-        </div>
-        <div className="stat-item">
-          <h3 className="stat-number">₹1000Cr</h3>
-          <p className="stat-label">Funds Distributed</p>
+          <h3 className="stat-number">{allSchemes.length}</h3>
+          <p className="stat-label">Schemes Listed</p>
         </div>
       </section>
 
@@ -407,7 +399,7 @@ function HomePage({ onFindSchemes, isLoggedIn, user, onNavigate, onLogout }) {
             <div className="feature">
               <span className="feature-icon">✓</span>
               <h4>Comprehensive Database</h4>
-              <p>Access 50+ central and state schemes</p>
+              <p>Browse central and state schemes in one place</p>
             </div>
             <div className="feature">
               <span className="feature-icon">✓</span>
@@ -469,14 +461,6 @@ function HomePage({ onFindSchemes, isLoggedIn, user, onNavigate, onLogout }) {
               <p>
                 <strong>Phone:</strong>{" "}
                 <a href="tel:+919876543210">+91 98765 43210</a>
-              </p>
-            </div>
-            <div className="contact-item">
-              <p>
-                <strong>Email:</strong>{" "}
-                <a href="mailto:support@msme-schemes.gov.in">
-                  support@msme-schemes.gov.in
-                </a>
               </p>
             </div>
             <div className="contact-item">
