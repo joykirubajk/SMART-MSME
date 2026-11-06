@@ -33,6 +33,15 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 - Tests: `npm test` 88/88 pass (84 engine/regression/seed + 4 endpoint tests with mocked DB). Frontend not compiled (no `Frontend/node_modules`).
 - Known: until Phase 3 adds the "new enterprise?" form field, schemes marked new-enterprise-only show as *possibly eligible* asking for it.
 
+## Remaining phases (7 of 9; detail in IMPLEMENTATION_PLAN.md)
+- **3** `user_profiles` persistence, authenticated `/recommend`, "new enterprise?" form field, 401 handling in the API client.
+- **4** Python FastAPI ranking service (TF-IDF + feature fit), Node client with timeout and rule-based fallback, score and "why matched" UI.
+- **5** Scheme discovery: server-side filters, search, pagination, `GET /schemes/:id`, filter-options endpoint, Browse page.
+- **6** Collections: shared saved-state context, optimistic save with rollback, bulk saved-ids endpoint, heart button everywhere.
+- **7** Test hardening: frontend (React Testing Library) tests, coverage, test-all script.
+- **8** Evaluation: synthetic personas, precision/recall, P@k, NDCG for no ranking vs fallback vs ML.
+- **9** User-study kit (SUS, tasks, analysis script), `PROJECT_REPORT.md` fixes, report sections.
+
 ## Manual TODO (owner: you / your teacher, deferred)
 1. Install Postgres, create `msme` and `msme_test`, create `Backend/.env` and `.env.test` ([DB_SETUP.md](DB_SETUP.md)).
 2. Run `npm run db:migrate`, `npm run db:seed`, `npm test` in `Backend/` (DB tests only truly run then).
