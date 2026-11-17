@@ -10,11 +10,11 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 | 2 Eligibility engine | `phase-2-eligibility-engine` | Done, committed |
 | 3 Profile + authenticated recommend API | `phase-3-profile-recommend` | Done, committed |
 | 4 Python ranking service | `phase-4-ranking-service` | Done, committed |
-| 5 Scheme discovery | - | Not started |
-| 6 Collections | - | Not started |
-| 7 Test hardening | - | Not started |
-| 8 Recommendation evaluation | - | Not started |
-| 9 User-study kit + report | - | Not started |
+| 5 Scheme discovery | `phase-5-discovery` | Done, committed |
+| 6 Collections | `phase-5-discovery` (same branch) | Done, committed |
+| 7 Test hardening | `phase-5-discovery` | Done, committed |
+| 8 Recommendation evaluation | `phase-5-discovery` | Done, committed |
+| 9 User-study kit + report | `phase-5-discovery` | Done, committed (user study itself still to be run) |
 
 ## Phase 1 - Foundation (done)
 - Additive, idempotent `Backend/db/schema.sql` (`npm run db:migrate`); new `user_profiles` table; `schemes.verified` / `official_source` columns. Nothing dropped or retyped.
@@ -54,22 +54,25 @@ Plan: [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Workflow: one local bran
 - Note: port 8001 is blocked on this Windows machine ("forbidden by access permissions"); docs use 8090.
 - To use: follow `ranking-service/README.md`, then set `RANKING_SERVICE_URL` in `Backend/.env`.
 
-## Remaining phases (5 of 9; detail in IMPLEMENTATION_PLAN.md)
-- **5** Scheme discovery: server-side filters, search, pagination, `GET /schemes/:id`, filter-options endpoint, Browse page.
-- **6** Collections: shared saved-state context, optimistic save with rollback, bulk saved-ids endpoint, heart button everywhere.
-- **7** Test hardening: frontend (React Testing Library) tests, coverage, test-all script.
-- **8** Evaluation: synthetic personas, precision/recall, P@k, NDCG for no ranking vs fallback vs ML.
-- **9** User-study kit (SUS, tasks, analysis script), `PROJECT_REPORT.md` fixes, report sections.
+## Phases 5-9 (done, 17 Nov 2026)
+Phases 5-9 were built in one session on `phase-5-discovery` as separate commits (one branch instead of five, to keep the stack simple).
 
-## Manual TODO (owner: you / your teacher, deferred)
-1. Install Postgres, create `msme` and `msme_test`, create `Backend/.env` and `.env.test` ([DB_SETUP.md](DB_SETUP.md)).
-2. Run `npm run db:migrate`, `npm run db:seed`, `npm test` in `Backend/` (DB tests only truly run then).
-3. Verify every seeded scheme against official sources ([DATA_VERIFICATION.md](DATA_VERIFICATION.md)).
-4. Run the ranking service once per `ranking-service/README.md` (needs Python 3.10+).
-5. Replace the placeholder footer phone/hours in `Frontend/src/Home/Homepage.jsx`.
-6. `cd Frontend && npm install && npm start` once, to confirm it compiles (never compiled in this environment).
-7. Push branches / open PRs yourself.
+- **Database:** Postgres 18 now runs in Docker (`msme-postgres`, volume `msme_pgdata`). The original dump `msme_09112026.sql` was restored into `msme`; the migration repairs it (sequences, email unique, updated_at); TWEES, AABCS and KKT from the dump were added to the seed in normalised form; `npm run db:reconcile-legacy` replaced the 5 legacy rows. The dump is git-ignored (personal data). DB tests now really run (not skipped).
+- **5 Discovery:** `GET /api/schemes` filters/search/sort/pagination, `/filters`, `/:id`; Browse page; home shows featured schemes.
+- **6 Collections:** `/saved/ids`, id validation, 401 for deleted users; `SavedSchemesContext` + `SaveButton` everywhere (optimistic + rollback).
+- **7 Tests:** 42 frontend RTL tests; backend coverage script; `scripts/test-all.(ps1|sh)`.
+- **8 Evaluation:** `evaluation/` (22 personas, 153 spot checks, reference implementation, P@k/NDCG/MRR); `npm run eval`.
+- **9 Docs:** root README, rewritten PROJECT_REPORT.md, DB_SETUP.md, REPORT_SECTIONS.md, user-study kit; security fixes (generic login error, crypto OTP 5 min, 7-day JWT, sequelize removed).
+- **Bugs found and fixed:** unsave never sent (state-updater read), investment filter dropped schemes without a minimum cost, stale session not validated, dump sequences behind ids.
+- **Verified:** backend 212/212, pytest 31/31, frontend 42/42, `CI=true` production build clean, full flow checked in a real browser (desktop + 375 px).
+
+## Manual TODO (owner: you)
+1. **Run the user study** (`docs/user-study/`), then fill the `[TO BE FILLED]` parts of `docs/REPORT_SECTIONS.md`.
+2. **Verify scheme data** against official sources ([DATA_VERIFICATION.md](DATA_VERIFICATION.md)) - the biggest remaining weakness.
+3. Decide what to do with the files you had staged before this work (`demo-recording/`, `.playwright-mcp/`, `phase.md`) - they are still staged, not committed.
+4. Merge / push the branches yourself when ready.
+5. Optional: email sending for OTP (needs SMTP credentials).
 
 ## Known caveats
-- Seed data is AI-written from general knowledge; treat as placeholders.
+- Seed data is placeholder data; treat as unverified.
 - Stand-Up India seed models "SC/ST or women" as special categories `sc_st`, `bpl_women`, `widow` (vocabulary has no plain "women"), so non-BPL women are excluded until the real rule is confirmed and the vocabulary is extended.

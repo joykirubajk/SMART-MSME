@@ -16,7 +16,7 @@ No click or application data exists, so nothing is *learned*. Each scheme gets a
 
 A signal that cannot be computed (e.g. no description entered) is dropped and the remaining weights are re-normalised. "Possibly eligible" schemes are multiplied by 0.9.
 
-**Limitations (say these out loud in the viva):** weights are subjective, not tuned on data; the score is a relevance heuristic, not a probability; the text signal is weak with a 19-scheme corpus and short descriptions; seed scheme data is unverified (see `docs/DATA_VERIFICATION.md`).
+**Limitations (say these out loud in the viva):** weights are subjective, not tuned on data; the score is a relevance heuristic, not a probability; the text signal is weak with a 22-scheme corpus and short descriptions; seed scheme data is unverified (see `docs/DATA_VERIFICATION.md`).
 
 If this service is down, the Node backend uses `Backend/services/fallbackScorer.js` (same formulas minus text) and marks the response `ranked_by: "fallback"`. `tests/fixtures/parity.json` keeps the two implementations identical.
 
