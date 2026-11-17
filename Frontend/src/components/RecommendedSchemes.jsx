@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import SchemeDetails from './SchemeDetails';
+import SaveButton from './SaveButton';
 import '../styles/RecommendedSchemes.css';
 
 const FIELD_LABELS = {
@@ -100,6 +101,7 @@ const RecommendedSchemes = ({ schemes, isLoading, rankedBy }) => {
 
           return (
             <div key={scheme.id} className="scheme-card">
+              <SaveButton schemeId={scheme.id} className="card-corner" />
               {/* Badge */}
               <div className="card-badge">
                 {scheme.tier === 'possibly_eligible' ? (

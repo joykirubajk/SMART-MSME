@@ -186,6 +186,12 @@ export const collectionAPI = {
     }
   },
 
+  // Ids of every saved scheme in one call: { data: { ids: [..] } }
+  getSavedIds: async () => {
+    const response = await apiClient.get('/users/schemes/saved/ids');
+    return response.data;
+  },
+
   // Check if a scheme is saved
   isSchemeSaved: async (schemeId) => {
     try {
@@ -207,15 +213,20 @@ export const profileAPI = {
 
 // Scheme endpoints
 export const schemeAPI = {
-  // Get all schemes
-  getAllSchemes: async () => {
-    try {
-      const response = await apiClient.get('/schemes');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching schemes:', error);
-      throw error;
-    }
+  // Filtered, paginated list. params: { category, state, q, investment, sort, order, page, limit }
+  // -> { data: { schemes, pagination: { page, limit, total, totalPages } } }
+  listSchemes: async (params = {}) => {
+    const clean = Object.fromEntries(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+    );
+    const response = await apiClient.get('/schemes', { params: clean });
+    return response.data;
+  },
+
+  // Values for the filter dropdowns: { data: { categories, locations, sorts } }
+  getFilterOptions: async () => {
+    const response = await apiClient.get('/schemes/filters');
+    return response.data;
   },
 
   // Get scheme by ID

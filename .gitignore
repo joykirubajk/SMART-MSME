@@ -41,3 +41,6 @@ coverage/
 
 # Test env (copy from .env.test.example)
 Backend/.env.test
+
+# Playwright MCP scratch output (browser snapshots/screenshots)
+.playwright-mcp/
