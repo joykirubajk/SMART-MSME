@@ -95,6 +95,27 @@ describe('discovery against Postgres', () => {
     d.schemes.forEach((s) => expect(s.max_investment === null || Number(s.max_investment) >= 100000000).toBe(true));
   });
 
+  // Compare against the same rule computed in JS over every row, so rows that are wrongly
+  // DROPPED are caught too (not only rows wrongly returned).
+  test.each([[30000], [50000], [500000], [1000001], [100000000]])('investment=%i returns exactly the fitting schemes', async (inv) => {
+    if (!isTestDb || !reachable) return;
+    const all = (await db.query('SELECT id, max_investment, rules FROM schemes')).rows;
+    const fits = (s) => {
+      const rules = typeof s.rules === 'string' ? JSON.parse(s.rules) : s.rules || {};
+      const min = Number(rules.min_project_cost);
+      return (s.max_investment === null || Number(s.max_investment) >= inv)
+        && (rules.min_project_cost === undefined || !Number.isFinite(min) || min <= inv);
+    };
+    const expected = all.filter(fits).map((s) => s.id).sort((a, b) => a - b);
+    const got = (await list(`?investment=${inv}&limit=50`)).schemes.map((s) => s.id).sort((a, b) => a - b);
+    expect(got).toEqual(expected);
+  });
+
+  maybe('Tamil Nadu + manufacturing + 5 lakh returns several schemes', async () => {
+    const d = await list('?state=tamil_nadu&category=manufacturing&investment=500000&limit=50');
+    expect(d.pagination.total).toBeGreaterThan(5);
+  });
+
   maybe('sort by investment desc', async () => {
     const vals = (await list('?sort=investment&order=desc&limit=50')).schemes
       .map((s) => s.max_investment).filter((v) => v !== null).map(Number);

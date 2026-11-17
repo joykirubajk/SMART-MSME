@@ -64,7 +64,8 @@ class Scheme {
         if (investment !== undefined) {
             const inv = p(investment);
             where.push(`(max_investment IS NULL OR max_investment >= ${inv})`);
-            where.push(`(rules IS NULL OR NOT ((rules::jsonb) ->> 'min_project_cost') ~ '^[0-9.]+$'
+            // No (numeric) minimum means no lower bound. COALESCE avoids NULL ~ regex -> NULL dropping the row.
+            where.push(`(COALESCE((rules::jsonb) ->> 'min_project_cost', '') !~ '^[0-9]+(\\.[0-9]+)?$'
                 OR ((rules::jsonb) ->> 'min_project_cost')::numeric <= ${inv})`);
         }
 
