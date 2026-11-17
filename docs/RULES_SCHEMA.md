@@ -23,7 +23,7 @@ Money is in rupees (integers). Ages are in years. The allowed keys and slugs are
 | `is_new_enterprise_only` | boolean | Only for starting a new enterprise |
 
 Other `schemes` columns used by the engine/UI:
-- `business_category` - one of the slugs above or `any` (display + discovery filter).
+- `business_category` - one of the slugs above or `any`. Used by the discovery filter, and by the engine as an implicit `business_categories` rule when the scheme has no explicit list (e.g. a `manufacturing` scheme is only for manufacturing businesses).
 - `location` - a state slug or `all_india` (display + discovery filter).
 - `max_investment` - display/sort value.
 - `beneficiary_categories` - JSON **array** of special-category slugs ("priority for" badges). Display only; eligibility uses `rules.special_categories`.
