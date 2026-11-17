@@ -9,7 +9,8 @@
     "db:migrate": "node scripts/migrate.js",
     "db:seed": "node scripts/seed.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "db:reconcile-legacy": "node scripts/reconcileLegacy.js"
+    "db:reconcile-legacy": "node scripts/reconcileLegacy.js",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage --coverageReporters=text-summary --coverageReporters=text"
   },
   "keywords": [],
   "author": "",
