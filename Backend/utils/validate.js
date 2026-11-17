@@ -51,6 +51,46 @@ const PROFILE_FIELDS = {
   business_description: [false, text(1000)],
 };
 
+// ---------------------------------------------------------------- scheme discovery query
+export const SCHEME_SORTS = ['name', 'investment', 'newest'];
+
+const SCHEME_QUERY_FIELDS = {
+  category: oneOf(BUSINESS_CATEGORIES.filter((c) => c !== 'any')),
+  state: stateSlug,
+  q: text(100),
+  investment: money,
+  sort: oneOf(SCHEME_SORTS),
+  order: oneOf(['asc', 'desc']),
+  page: intRange(1, 10000),
+  limit: intRange(1, 50),
+};
+
+// Validates GET /api/schemes query params. Empty params are ignored; defaults applied.
+// Returns { value, errors:[{field,message}] }.
+export function validateSchemeQuery(query) {
+  const src = query && typeof query === 'object' ? query : {};
+  const value = { sort: 'name', order: 'asc', page: 1, limit: 12 };
+  const errors = [];
+  for (const [field, check] of Object.entries(SCHEME_QUERY_FIELDS)) {
+    const raw = src[field];
+    if (absent(raw)) continue;
+    if (typeof raw !== 'string' && typeof raw !== 'number') {
+      errors.push({ field, message: `${field} is invalid` });
+      continue;
+    }
+    const r = check(raw);
+    if (r.error) errors.push({ field, message: `${field} ${r.error}` });
+    else value[field] = r.value;
+  }
+  return { value, errors };
+}
+
+// Positive integer id from a route param, or null.
+export function parseId(raw) {
+  const n = Number(raw);
+  return /^\d+$/.test(String(raw)) && Number.isSafeInteger(n) && n > 0 && n <= 2147483647 ? n : null;
+}
+
 // Validates a business profile. Absent optional fields become null.
 // Returns { value, errors:[{field,message}] }. Unknown fields are ignored.
 export function validateProfile(input, { requireCore = true } = {}) {

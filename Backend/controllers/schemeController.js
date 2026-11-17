@@ -2,8 +2,8 @@ import Scheme from '../models/scheme.js';
 import { normalizeProfile, missingRequiredFields } from '../services/eligibilityEngine.js';
 import { recommend } from '../services/recommendationService.js';
 import Profile from '../models/profile.js';
-import { validateProfile } from '../utils/validate.js';
-import { fail } from '../utils/response.js';
+import { validateProfile, validateSchemeQuery, parseId, SCHEME_SORTS } from '../utils/validate.js';
+import { ok, fail } from '../utils/response.js';
 
 // Controller for recommending schemes. Requires login.
 // Body: { profile?: {...}, save_profile?: boolean }. Without `profile`, the user's saved profile is used.
@@ -67,22 +67,66 @@ const recommendSchemes = async (req, res, next) => {
     }
 };
 
-// Get all schemes
-const getAllSchemes = async (req, res) => {
+// GET /api/schemes?category=&state=&q=&investment=&sort=name|investment|newest&order=asc|desc&page=&limit=
+// -> { data: { schemes, pagination: { page, limit, total, totalPages } } }
+const getAllSchemes = async (req, res, next) => {
     try {
-        const schemes = await Scheme.findAll();
-        res.json({
-            success: true,
-            data: schemes
+        const { value, errors } = validateSchemeQuery(req.query);
+        if (errors.length > 0) {
+            return fail(res, 400, 'Invalid query parameters', errors);
+        }
+        const { schemes, total } = await Scheme.search(value);
+        return ok(res, {
+            schemes,
+            pagination: {
+                page: value.page,
+                limit: value.limit,
+                total,
+                totalPages: Math.max(1, Math.ceil(total / value.limit))
+            },
+            filters: {
+                category: value.category ?? null,
+                state: value.state ?? null,
+                q: value.q ?? null,
+                investment: value.investment ?? null,
+                sort: value.sort,
+                order: value.order
+            }
         });
     } catch (error) {
-        console.error('Error fetching schemes:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+        next(error);
     }
 };
 
+// GET /api/schemes/filters -> { data: { categories:[...], locations:[...], sorts:[...] } }
+const getFilterOptions = async (req, res, next) => {
+    try {
+        const options = await Scheme.filterOptions();
+        return ok(res, {
+            categories: options.categories || [],
+            locations: options.locations || [],
+            sorts: SCHEME_SORTS
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
-export { recommendSchemes, getAllSchemes };
+// GET /api/schemes/:id
+const getSchemeById = async (req, res, next) => {
+    try {
+        const id = parseId(req.params.id);
+        if (id === null) {
+            return fail(res, 400, 'Scheme id must be a positive whole number');
+        }
+        const scheme = await Scheme.findById(id);
+        if (!scheme) {
+            return fail(res, 404, 'Scheme not found');
+        }
+        return ok(res, scheme);
+    } catch (error) {
+        next(error);
+    }
+};
+
+export { recommendSchemes, getAllSchemes, getFilterOptions, getSchemeById };

@@ -74,3 +74,16 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 
 -- Phase 3 (additive): "are you starting a new enterprise?"
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS is_new_enterprise BOOLEAN;
+
+-- ---------------------------------------------------------------- legacy-dump repairs
+-- The original dev dump (msme_09112026.sql) was created by hand: no UNIQUE on
+-- users.email, no schemes.updated_at, and its sequences were reset below the
+-- existing ids. These statements are no-ops on a database built from this file.
+ALTER TABLE schemes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users (email);
+SELECT setval(pg_get_serial_sequence('users', 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM users), 1), (SELECT COUNT(*) > 0 FROM users));
+SELECT setval(pg_get_serial_sequence('schemes', 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM schemes), 1), (SELECT COUNT(*) > 0 FROM schemes));
+SELECT setval(pg_get_serial_sequence('user_saved_schemes', 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM user_saved_schemes), 1), (SELECT COUNT(*) > 0 FROM user_saved_schemes));
+
+-- ---------------------------------------------------------------- discovery indexes (Phase 5)
+CREATE INDEX IF NOT EXISTS idx_schemes_name_lower ON schemes (LOWER(name));

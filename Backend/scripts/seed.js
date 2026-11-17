@@ -26,8 +26,8 @@ export async function seed() {
       `INSERT INTO schemes
          (name, description, business_category, max_investment, location,
           rules, benefits, beneficiary_categories, verified, official_source)
-       SELECT $1, $2, $3, $4, $5, $6, $7, $8, FALSE, $9
-       WHERE NOT EXISTS (SELECT 1 FROM schemes WHERE name = $1)`,
+       SELECT $1::text, $2, $3, $4, $5, $6, $7, $8, FALSE, $9
+       WHERE NOT EXISTS (SELECT 1 FROM schemes WHERE name = $1::text)`,
       [
         s.name, s.description, s.business_category, s.max_investment, s.location,
         JSON.stringify(s.rules), JSON.stringify(s.benefits), JSON.stringify(s.beneficiary_categories),
